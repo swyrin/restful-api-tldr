@@ -6,7 +6,7 @@ info:
 servers:
   - url: http://localhost:7554/
 paths:
-  /:
+  /student:
     post:
       summary: Create a new student
       requestBody:
@@ -22,6 +22,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Student'
+  /student/all:
     get:
       summary: Get all students
       responses:
@@ -33,7 +34,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Student'
-  /{id}:
+  /student/{id}:
     get:
       summary: Get a student by ID
       parameters:
