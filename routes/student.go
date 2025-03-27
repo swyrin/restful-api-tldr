@@ -2,10 +2,10 @@ package routes
 
 import (
 	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
-
-	"rest-client/prisma/db"
+	"rest-client/db"
 )
 
 type StudentT struct {
@@ -14,76 +14,84 @@ type StudentT struct {
 	Email string `json:"email"`
 }
 
-func AddStudentRoutes(rg *gin.RouterGroup) {
-	client := db.NewClient()
-	_ = client.Prisma.Connect()
-
-	defer func() {
-		_ = client.Prisma.Disconnect()
-	}()
-
-	ctx := context.Background()
-
-	rg.POST("/", func(c *gin.Context) {
+func AddStudentRoutes(rg *gin.RouterGroup, client *db.PrismaClient, ctx context.Context) {
+	rg.POST("/student", func(c *gin.Context) {
 		var body StudentT
 
 		_ = c.BindJSON(&body)
 
-		created, _ := client.Student.CreateOne(
+		created, err := client.Student.CreateOne(
 			db.Student.ID.Set(body.ID),
 			db.Student.Name.Set(body.Name),
 			db.Student.Email.Set(body.Email),
 		).Exec(ctx)
 
-		/*
-			_, _ = client.Student.CreateOne(
-				db.Student.ID.Set("ITITIU21172"),
-				db.Student.Name.Set("Pham Tien Dat"),
-				db.Student.Email.Set("dat20036@gmail.com"),
-			).Exec(ctx)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			fmt.Println(err)
+			return
+		}
 
-			_, _ = client.Student.CreateOne(
-				db.Student.ID.Set("ITITIU21263"),
-				db.Student.Name.Set("Nguyen Trong Nguyen"),
-				db.Student.Email.Set("ITITIU21263@student.hcmiu.edu.vn"),
-			).Exec(ctx)
-		*/
-
-		c.IndentedJSON(http.StatusOK, created)
+		c.IndentedJSON(http.StatusOK, &created)
 	})
 
-	rg.GET("/:id", func(c *gin.Context) {
-		found, _ := client.Student.FindUnique(
+	rg.GET("/student/:id", func(c *gin.Context) {
+		found, err := client.Student.FindUnique(
 			db.Student.ID.Equals(c.Param("id")),
 		).Exec(ctx)
+
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			fmt.Println(err)
+			return
+		}
 
 		c.IndentedJSON(http.StatusOK, found)
 	})
 
-	rg.GET("/", func(c *gin.Context) {
-		foundStudents, _ := client.Student.FindMany().Exec(ctx)
+	rg.GET("/student/all", func(c *gin.Context) {
+		foundStudents, err := client.Student.FindMany().Exec(ctx)
+
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			fmt.Println(err)
+			return
+		}
 
 		c.JSON(http.StatusOK, foundStudents)
 	})
 
-	rg.PUT("/:id", func(c *gin.Context) {
+	rg.PUT("/student/:id", func(c *gin.Context) {
 		var body StudentT
 		_ = c.BindJSON(&body)
 
-		model, _ := client.Student.FindUnique(
+		model, err := client.Student.FindUnique(
 			db.Student.ID.Equals(c.Param("id")),
 		).Update(
+			db.Student.ID.Set(body.ID),
 			db.Student.Name.Set(body.Name),
 			db.Student.Email.Set(body.Email),
 		).Exec(ctx)
 
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			fmt.Println(err)
+			return
+		}
+
 		c.IndentedJSON(http.StatusOK, model)
 	})
 
-	rg.DELETE("/:id", func(c *gin.Context) {
-		found, _ := client.Student.FindUnique(
+	rg.DELETE("/student/:id", func(c *gin.Context) {
+		found, err := client.Student.FindUnique(
 			db.Student.ID.Equals(c.Param("id")),
 		).Delete().Exec(ctx)
+
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			fmt.Println(err)
+			return
+		}
 
 		c.JSON(http.StatusOK, found)
 	})
